@@ -19,9 +19,9 @@ set synmaxcol=500
 set sidescroll=1
 
 " line numbers
-set number
+" set number
 " fancy numbers
-set relativenumber
+" set relativenumber
 
 " don't highlight search
 set nohlsearch
@@ -62,7 +62,7 @@ command Qall qall
 nnoremap ; :
 
 " disable ex mode
-:nnoremap Q <Nop>
+nnoremap Q <Nop>
 
 " scrolling with arrow keys
 map <Down> <c-e>
@@ -90,9 +90,8 @@ Plug 'scrooloose/nerdtree'
 
 " color
 Plug 'morhetz/gruvbox'
+Plug 'nvim-treesitter/nvim-treesitter'
 
-" color on brackets
-Plug 'luochen1990/rainbow'
 " color on yank
 Plug 'machakann/vim-highlightedyank'
 
@@ -117,7 +116,7 @@ Plug 'tpope/vim-surround'
 Plug 'Raimondi/delimitMate'
 
 " copy history
-Plug 'vim-scripts/YankRing.vim'
+" Plug 'vim-scripts/YankRing.vim'
 
 " undo history
 Plug 'mbbill/undotree'
@@ -134,7 +133,6 @@ Plug 'leafgarland/typescript-vim'
 " autocompletion and diagnostic
 Plug 'neovim/nvim-lspconfig'
 Plug 'nvim-lua/completion-nvim'
-Plug 'nvim-lua/diagnostic-nvim'
 
 call plug#end()
 
@@ -152,9 +150,9 @@ let airline#extensions#nvimlsp#warning_symbol = '⚡'
 highlight HighlightedyankRegion cterm=bold gui=bold
 
 " disable background color, does not work with termguicolors
-" highlight Normal ctermbg=None
-" highlight SignColumn ctermbg=None
-"
+highlight Normal ctermbg=None
+highlight SignColumn ctermbg=None
+
 " set it manually if termguicolors enabled
 highlight Normal guibg=#101010
 highlight SignColumn guibg=#101010
@@ -178,7 +176,7 @@ autocmd BufNewFile,BufRead *.rb map <leader>b obinding.pry<ESC>
 autocmd BufNewFile,BufRead *.ex map <leader>b oIEx.pry<ESC>
 
 " yankring history
-let g:yankring_history_file = '.yankring_history'
+" let g:yankring_history_file = '.yankring_history'
 
 " substitute latex symbols
 " set conceallevel=1
@@ -211,22 +209,33 @@ nnoremap <silent> gs <cmd>lua vim.lsp.buf.signature_help()<CR>
 nnoremap <silent> gr <cmd>lua vim.lsp.buf.references()<CR>
 nnoremap <silent> g0 <cmd>lua vim.lsp.buf.document_symbol()<CR>
 
-" trigger completion with c-y
-let g:completion_confirm_key = "\<C-y>"
-" show info text in code
-let g:diagnostic_enable_virtual_text = 1
-
-" lua for lsp
+" lua to setup language server
 lua <<EOF
   local on_attach_vim = function(client)
     require'completion'.on_attach(client)
-    require'diagnostic'.on_attach(client)
   end
-  require'nvim_lsp'.pyls.setup{on_attach=on_attach_vim}
-  require'nvim_lsp'.tsserver.setup{on_attach=on_attach_vim}
-  require'nvim_lsp'.rls.setup{on_attach=on_attach_vim}
+  require'lspconfig'.pyls.setup{on_attach=on_attach_vim}
+  require'lspconfig'.tsserver.setup{on_attach=on_attach_vim}
+  require'lspconfig'.rust_analyzer.setup{on_attach=on_attach_vim}
+  require'lspconfig'.solargraph.setup{on_attach=on_attach_vim}
+  require'lspconfig'.texlab.setup{on_attach=on_attach_vim}
+EOF
+
+" lua to setup tree-sitter
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+  highlight = {
+    enable = true,
+  },
+}
 EOF
 
 " error and warning signs in signbar
-sign define LspDiagnosticsErrorSign text=✘
-sign define LspDiagnosticsWarningSign text=⚡
+sign define LspDiagnosticsSignError text=✘
+sign define LspDiagnosticsSignWarning text=⚡
+sign define LspDiagnosticsSignHint text=
+
+" highlight lua inside this file
+let g:vimsyn_embed= 'l'
+" trigger completion with c-y
+let g:completion_confirm_key = "\<C-y>"
