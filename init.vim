@@ -13,7 +13,7 @@ set mouse=a
 
 " stop vim trying to syntax highlight long lines, typically found in minified
 " files. This greatly reduces lag yet is still wide enough for large displays
-set synmaxcol=500
+" set synmaxcol=500
 
 " smoother scrolling when moving horizontally
 set sidescroll=1
@@ -165,22 +165,13 @@ nnoremap <leader>f :Files!<cr>
 nnoremap <leader>l :Buffers!<cr>
 " show filetree
 nnoremap <leader>n :NERDTreeToggle<cr>
-" show yank history
-nnoremap <leader>y :YRShow<cr>
 " show undotree
 nnoremap <leader>u :UndotreeToggle<cr>
 
-" breakpoints
+" simple breakpoints
 autocmd BufNewFile,BufRead *.py map <leader>b oimport ipdb; ipdb.set_trace()<ESC>
 autocmd BufNewFile,BufRead *.rb map <leader>b obinding.pry<ESC>
 autocmd BufNewFile,BufRead *.ex map <leader>b oIEx.pry<ESC>
-
-" yankring history
-" let g:yankring_history_file = '.yankring_history'
-
-" substitute latex symbols
-" set conceallevel=1
-" let g:tex_conceal="abdgm"
 
 " remove cowsay from startify header
 let g:startify_custom_header = ''
@@ -202,23 +193,33 @@ set completeopt=menuone,noinsert,noselect
 imap <silent> <c-p> <Plug>(completion_trigger)
 imap <silent> <c-n> <Plug>(completion_trigger)
 
+" trigger completion with c-y
+let g:completion_confirm_key = "\<C-y>"
+
 " lsp features mapping
 nnoremap <silent> gd <cmd>lua vim.lsp.buf.definition()<CR>
 nnoremap <silent> K  <cmd>lua vim.lsp.buf.hover()<CR>
 nnoremap <silent> gs <cmd>lua vim.lsp.buf.signature_help()<CR>
 nnoremap <silent> gr <cmd>lua vim.lsp.buf.references()<CR>
 nnoremap <silent> g0 <cmd>lua vim.lsp.buf.document_symbol()<CR>
+nnoremap <silent> <leader>e <cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>
 
 " lua to setup language server
 lua <<EOF
   local on_attach_vim = function(client)
     require'completion'.on_attach(client)
   end
-  require'lspconfig'.pyls.setup{on_attach=on_attach_vim}
+  require'lspconfig'.pylsp.setup{on_attach=on_attach_vim}
   require'lspconfig'.tsserver.setup{on_attach=on_attach_vim}
   require'lspconfig'.rust_analyzer.setup{on_attach=on_attach_vim}
   require'lspconfig'.solargraph.setup{on_attach=on_attach_vim}
   require'lspconfig'.texlab.setup{on_attach=on_attach_vim}
+
+  vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+      vim.lsp.diagnostic.on_publish_diagnostics, {
+          virtual_text = false
+      }
+  )
 EOF
 
 " lua to setup tree-sitter
@@ -237,5 +238,3 @@ sign define LspDiagnosticsSignHint text=
 
 " highlight lua inside this file
 let g:vimsyn_embed= 'l'
-" trigger completion with c-y
-let g:completion_confirm_key = "\<C-y>"
