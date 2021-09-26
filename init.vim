@@ -1,3 +1,6 @@
+" highlight lua inside this file
+let g:vimsyn_embed= 'l'
+
 " better colors
 set termguicolors
 
@@ -13,7 +16,7 @@ set mouse=a
 
 " stop vim trying to syntax highlight long lines, typically found in minified
 " files. This greatly reduces lag yet is still wide enough for large displays
-set synmaxcol=500
+" set synmaxcol=500
 
 " smoother scrolling when moving horizontally
 set sidescroll=1
@@ -58,6 +61,9 @@ command Q q
 command Qa qa
 command Qall qall
 
+" simple breakpoints
+autocmd BufNewFile,BufRead *.py map <leader>b oimport ipdb; ipdb.set_trace()<ESC>
+
 " remap ; to :
 nnoremap ; :
 
@@ -78,9 +84,6 @@ call plug#begin('~/.vim/plugged')
 
 " startup screen
 Plug 'mhinz/vim-startify'
-
-" zen mode
-Plug 'junegunn/goyo.vim'
 
 " smooth scrolling
 Plug 'psliwka/vim-smoothie'
@@ -115,36 +118,29 @@ Plug 'tpope/vim-surround'
 " brackets autocomplete
 Plug 'Raimondi/delimitMate'
 
-" copy history
-" Plug 'vim-scripts/YankRing.vim'
-
-" undo history
-Plug 'mbbill/undotree'
-
 " snippets
 Plug 'honza/vim-snippets'
 
 " git integration
 Plug 'tpope/vim-fugitive'
 
-" Typescript Syntax
-Plug 'leafgarland/typescript-vim'
-
-" autocompletion and diagnostic
-Plug 'neovim/nvim-lspconfig'
-Plug 'nvim-lua/completion-nvim'
+" autocompletion
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
 call plug#end()
 
 " color scheme
+let g:gruvbox_contrast_dark='hard'
+let g:gruvbox_sign_column='dark0_hard'
 set background=dark
 colorscheme gruvbox
 
 " airline settings
 let g:airline_theme='zenburn'
 let g:airline_powerline_fonts = 1
-let airline#extensions#nvimlsp#error_symbol = '✘ '
-let airline#extensions#nvimlsp#warning_symbol = '⚡'
+let g:airline#extensions#coc#enabled = 0
+let airline#extensions#coc#error_symbol = '✘ '
+let airline#extensions#coc#warning_symbol = '⚡'
 
 " make bold on yank
 highlight HighlightedyankRegion cterm=bold gui=bold
@@ -154,8 +150,8 @@ highlight Normal ctermbg=None
 highlight SignColumn ctermbg=None
 
 " set it manually if termguicolors enabled
-highlight Normal guibg=#101010
-highlight SignColumn guibg=#101010
+" highlight Normal guibg=#101010
+" highlight SignColumn guibg=#101010
 
 " search git files
 nnoremap <leader>p :GitFiles!<cr>
@@ -165,22 +161,6 @@ nnoremap <leader>f :Files!<cr>
 nnoremap <leader>l :Buffers!<cr>
 " show filetree
 nnoremap <leader>n :NERDTreeToggle<cr>
-" show yank history
-nnoremap <leader>y :YRShow<cr>
-" show undotree
-nnoremap <leader>u :UndotreeToggle<cr>
-
-" breakpoints
-autocmd BufNewFile,BufRead *.py map <leader>b oimport ipdb; ipdb.set_trace()<ESC>
-autocmd BufNewFile,BufRead *.rb map <leader>b obinding.pry<ESC>
-autocmd BufNewFile,BufRead *.ex map <leader>b oIEx.pry<ESC>
-
-" yankring history
-" let g:yankring_history_file = '.yankring_history'
-
-" substitute latex symbols
-" set conceallevel=1
-" let g:tex_conceal="abdgm"
 
 " remove cowsay from startify header
 let g:startify_custom_header = ''
@@ -195,32 +175,6 @@ if has("nvim")
   au FileType fzf tunmap <buffer> <Esc>
 endif
 
-" set completion options
-set completeopt=menuone,noinsert,noselect
-
-" trigger completion with c-n and c-p
-imap <silent> <c-p> <Plug>(completion_trigger)
-imap <silent> <c-n> <Plug>(completion_trigger)
-
-" lsp features mapping
-nnoremap <silent> gd <cmd>lua vim.lsp.buf.definition()<CR>
-nnoremap <silent> K  <cmd>lua vim.lsp.buf.hover()<CR>
-nnoremap <silent> gs <cmd>lua vim.lsp.buf.signature_help()<CR>
-nnoremap <silent> gr <cmd>lua vim.lsp.buf.references()<CR>
-nnoremap <silent> g0 <cmd>lua vim.lsp.buf.document_symbol()<CR>
-
-" lua to setup language server
-lua <<EOF
-  local on_attach_vim = function(client)
-    require'completion'.on_attach(client)
-  end
-  require'lspconfig'.pyls.setup{on_attach=on_attach_vim}
-  require'lspconfig'.tsserver.setup{on_attach=on_attach_vim}
-  require'lspconfig'.rust_analyzer.setup{on_attach=on_attach_vim}
-  require'lspconfig'.solargraph.setup{on_attach=on_attach_vim}
-  require'lspconfig'.texlab.setup{on_attach=on_attach_vim}
-EOF
-
 " lua to setup tree-sitter
 lua <<EOF
 require'nvim-treesitter.configs'.setup {
@@ -230,12 +184,20 @@ require'nvim-treesitter.configs'.setup {
 }
 EOF
 
-" error and warning signs in signbar
-sign define LspDiagnosticsSignError text=✘
-sign define LspDiagnosticsSignWarning text=⚡
-sign define LspDiagnosticsSignHint text=
+inoremap <silent><expr> <c-space> coc#refresh()
 
-" highlight lua inside this file
-let g:vimsyn_embed= 'l'
-" trigger completion with c-y
-let g:completion_confirm_key = "\<C-y>"
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+
+function! s:show_documentation()
+  if (index(['vim','help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  elseif (coc#rpc#ready())
+    call CocActionAsync('doHover')
+  else
+    execute '!' . &keywordprg . " " . expand('<cword>')
+  endif
+endfunction
